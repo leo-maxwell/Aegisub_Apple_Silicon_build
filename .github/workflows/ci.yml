@@ -68,5 +68,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Aegisub-3.2.2-darwin-aarch64
-          path: build_static/Aegisub-3.2.2.dmg
+          path: build_static/Aegisub-3.4.0.dmg
           if-no-files-found: error
