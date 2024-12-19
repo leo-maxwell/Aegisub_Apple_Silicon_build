@@ -37,10 +37,10 @@ jobs:
           export PKG_CONFIG_PATH="/opt/homebrew/opt/icu4c/lib/pkgconfig:/opt/homebrew/opt/openal-soft/lib/pkgconfig"
           # Skip brew update for now, see https://github.com/actions/setup-python/issues/577
           # brew update
-          brew install boost cmake ffmpeg ffms2 fftw \
+          brew install boost ffmpeg ffms2 fftw \
           hunspell libass libiconv luarocks \
-          meson ninja openal-soft pkg-config \
-          portaudio pulseaudio uchardet wxwidgets zlib
+          meson ninja openal-soft portaudio \
+          pulseaudio uchardet wxwidgets zlib
           luarocks install luafilesystem 1.8.0
           luarocks install moonscript --dev
 
@@ -67,6 +67,6 @@ jobs:
       - name: Upload artifacts - macOS dmg
         uses: actions/upload-artifact@v4
         with:
-          name: Aegisub-3.2.2-darwin-aarch64
+          name: Aegisub-3.4.0-darwin-aarch64
           path: build_static/Aegisub-3.4.0.dmg
           if-no-files-found: error
