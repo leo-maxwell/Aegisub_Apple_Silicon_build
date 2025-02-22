@@ -59,7 +59,7 @@ void HunspellSpellChecker::AddWord(std::string_view word) {
 	if (!hunspell) return;
 
 	// Add it to the in-memory dictionary
-	hunspell->add(conv->Convert(word).c_str());
+	hunspell->add(conv->Convert(word));
 
 	// Add the word
 	if (customWords.insert(std::string(word)).second)
@@ -70,7 +70,7 @@ void HunspellSpellChecker::RemoveWord(std::string_view word) {
 	if (!hunspell) return;
 
 	// Remove it from the in-memory dictionary
-	hunspell->remove(conv->Convert(word).c_str());
+	hunspell->remove(conv->Convert(word));
 
 	auto word_iter = customWords.find(word);
 	if (word_iter != customWords.end()) {
@@ -117,7 +117,7 @@ void HunspellSpellChecker::WriteUserDictionary() {
 bool HunspellSpellChecker::CheckWord(std::string_view word) {
 	if (!hunspell) return true;
 	try {
-		return hunspell->spell(conv->Convert(word)) == 1;
+		return hunspell->spell(conv->Convert(word));
 	}
 	catch (agi::charset::ConvError const&) {
 		return false;
@@ -166,8 +166,8 @@ std::vector<std::string> HunspellSpellChecker::GetLanguageList() {
 	return languages;
 }
 
-static bool check_path(std::filesystem::path const& path, std::string_view language,
-	                   std::filesystem::path& aff, std::filesystem::path& dic) {
+static bool check_path(agi::fs::path const& path, std::string_view language,
+	                   agi::fs::path& aff, agi::fs::path& dic) {
 	aff = path/agi::format("%s.aff", language);
 	dic = path/agi::format("%s.dic", language);
 	return agi::fs::FileExists(aff) && agi::fs::FileExists(dic);
@@ -179,7 +179,7 @@ void HunspellSpellChecker::OnLanguageChanged() {
 	auto language = OPT_GET("Tool/Spell Checker/Language")->GetString();
 	if (language.empty()) return;
 
-	std::filesystem::path aff, dic;
+	agi::fs::path aff, dic;
 	auto path = config::path->Decode(OPT_GET("Path/Dictionary")->GetString() + "/");
 	if (!check_path(path, language, aff, dic)) {
 		path = config::path->Decode("?dictionary/");
@@ -205,7 +205,7 @@ void HunspellSpellChecker::OnLanguageChanged() {
 
 	for (auto const& word : customWords) {
 		try {
-			hunspell->add(conv->Convert(word).c_str());
+			hunspell->add(conv->Convert(word));
 		}
 		catch (agi::charset::ConvError const&) {
 			// Normally this shouldn't happen, but some versions of Aegisub

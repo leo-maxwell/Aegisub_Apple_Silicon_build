@@ -46,11 +46,14 @@ A vaguely recent version of Xcode and the corresponding command-line tools are r
 
 For personal usage, you can use pip and homebrew to install almost all of Aegisub's dependencies:
 
-    pip3 install meson
-    brew install cmake ninja pkg-config  libass boost zlib ffms2 fftw hunspell
+    pip3 install meson      # or brew install meson if you installed Python via brew
+    brew install cmake ninja pkg-config  libass boost zlib ffms2 fftw hunspell uchardet
     export LDFLAGS="-L/usr/local/opt/icu4c/lib"
     export CPPFLAGS="-I/usr/local/opt/icu4c/include"
     export PKG_CONFIG_PATH="/usr/local/opt/icu4c/lib/pkgconfig"
+
+When compiling on Apple Silicon, replace `/usr/local` with `/opt/homebrew`.
+When compiling on macOS 15.0 (Sequoia) or later, you may also want to `export MACOS_X_DEPLOYMENT_TARGET=14.0` to make the color picker work.
 
 Once the dependencies are installed, build Aegisub with `meson build && meson compile -C build`.
 
@@ -62,6 +65,47 @@ meson compile -C build_static
 meson test -C build_static --verbose
 meson compile osx-bundle -C build_static
 meson compile osx-build-dmg -C build_static
+```
+
+### Linux or other
+
+#### Build dependencies for Debian-based systems
+
+```
+compiler:    build-essential
+pkgconfig:   pkg-config  or  pkgconf
+meson:       meson ninja-build
+gettext:     gettext intltool
+fontconfig:  libfontconfig1-dev
+libass:      libass-dev
+boost:       libboost-chrono-dev libboost-locale-dev libboost-regex-dev libboost-system-dev libboost-thread-dev
+zlib:        zlib1g-dev
+WxWidgets:   wx3.2-headers libwxgtk3.2-dev  or  wx3.0-headers libwxgtk3.0-dev
+ICU:         icu-devtools libicu-dev
+pulse-audio: libpulse-dev
+ALSA:        libasound2-dev
+OpenAL:      libopenal-dev
+ffms2:       libffms2-dev
+fftw3:       libfftw3-dev
+hunspell:    libhunspell-dev
+uchardet:    libuchardet-dev
+libcurl:     libcurl4-openssl-dev  or  libcurl4-gnutls-dev
+opengl:      libgl1-mesa-dev
+gtest:       libgtest-dev
+gmock:       libgmock-dev
+```
+
+I.e. to install on Ubuntu 24.04 run this command:
+``` bash
+sudo apt install build-essential pkg-config meson ninja-build gettext intltool libfontconfig1-dev libass-dev libboost-chrono-dev libboost-locale-dev libboost-regex-dev libboost-system-dev libboost-thread-dev zlib1g-dev wx3.2-headers libwxgtk3.2-dev icu-devtools libicu-dev libpulse-dev libasound2-dev libopenal-dev libffms2-dev libfftw3-dev libhunspell-dev libuchardet-dev libcurl4-gnutls-dev libgl1-mesa-dev libgtest-dev libgmock-dev
+```
+
+#### Build Aegisub
+
+``` bash
+meson setup build --prefix=/usr/local --buildtype=release --strip -Dsystem_luajit=false
+meson compile -C build
+meson install -C build --skip-subprojects luajit
 ```
 
 ## Updating Moonscript

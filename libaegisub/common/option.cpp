@@ -25,6 +25,7 @@
 #include "libaegisub/log.h"
 #include "libaegisub/option_value.h"
 
+#include <algorithm>
 #include <boost/interprocess/streams/bufferstream.hpp>
 #include <cassert>
 #include <memory>
@@ -171,7 +172,7 @@ struct option_name_cmp {
 
 namespace agi {
 
-Options::Options(std::filesystem::path const& file, std::string_view default_config, OptionSetting setting)
+Options::Options(agi::fs::path const& file, std::string_view default_config, OptionSetting setting)
 : config_file(file)
 , setting(setting)
 {

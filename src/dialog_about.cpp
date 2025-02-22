@@ -49,7 +49,7 @@ void ShowAboutDialog(wxWindow *parent) {
 
 	// Generate about string
 	wxString aboutString = wxString("Aegisub ") + GetAegisubShortVersionString() + ".\n"
-		"Copyright (c) 2005-2019 Rodrigo Braz Monteiro, Niels Martin Hansen, Thomas Goyne et al.\n\n"
+		"Copyright (c) 2005-2025 Rodrigo Braz Monteiro, Niels Martin Hansen, Thomas Goyne et al.\n\n"
 		"Programmers:\n"
 		"    Alysson Souza e Silva\n"
 		"    Amar Takhar\n"
@@ -104,6 +104,7 @@ void ShowAboutDialog(wxWindow *parent) {
 #ifdef WITH_FFMS2
 		"    FFmpeg - Copyright (c) Fabrice Bellard;\n"
 		"    FFMS2 - Copyright (c) Fredrik Mellbin;\n"
+		"    dav1d - Copyright (c) VideoLAN and dav1d authors;\n"
 #endif
 #ifdef WITH_AVISYNTH
 		"    Avisynth 2.5 - Copyright (c) Ben Rudiak-Gould et al;\n"
@@ -120,6 +121,9 @@ void ShowAboutDialog(wxWindow *parent) {
 		"    Fontconfig - Copyright (c) Keith Packard et al;\n"
 #ifdef WITH_FFTW3
 		"    FFTW - Copyright (c) Matteo Frigo, Massachusetts Institute of Technology;\n"
+#endif
+#ifdef WITH_UPDATE_CHECKER
+		"    libcurl - Copyright (c) Daniel Stenberg et al;\n"
 #endif
 		+ _("\nSee the help file for full credits.\n")
 #ifdef BUILD_CREDIT

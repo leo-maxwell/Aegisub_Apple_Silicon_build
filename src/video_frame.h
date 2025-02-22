@@ -14,6 +14,7 @@
 //
 // Aegisub Project http://www.aegisub.org/
 
+#include <stddef.h>
 #include <vector>
 
 class wxImage;
@@ -27,3 +28,4 @@ struct VideoFrame {
 };
 
 wxImage GetImage(VideoFrame const& frame);
+wxImage GetImageWithAlpha(VideoFrame const& frame);

@@ -4,6 +4,7 @@
 ; Aegisub localization
 #ifdef ENABLE_AEG_TRANSLATIONS
 Source: {#BUILD_ROOT}\po\ar\LC_MESSAGES\aegisub.mo;          DestDir: {app}\locale\ar;    DestName: aegisub.mo; Flags: ignoreversion; Components: translations
+Source: {#BUILD_ROOT}\po\be\LC_MESSAGES\aegisub.mo;          DestDir: {app}\locale\be;    DestName: aegisub.mo; Flags: ignoreversion; Components: translations
 Source: {#BUILD_ROOT}\po\bg\LC_MESSAGES\aegisub.mo;          DestDir: {app}\locale\bg;    DestName: aegisub.mo; Flags: ignoreversion; Components: translations
 Source: {#BUILD_ROOT}\po\ca\LC_MESSAGES\aegisub.mo;          DestDir: {app}\locale\ca;    DestName: aegisub.mo; Flags: ignoreversion; Components: translations
 Source: {#BUILD_ROOT}\po\cs\LC_MESSAGES\aegisub.mo;          DestDir: {app}\locale\cs;    DestName: aegisub.mo; Flags: ignoreversion; Components: translations
@@ -27,6 +28,7 @@ Source: {#BUILD_ROOT}\po\pt_PT\LC_MESSAGES\aegisub.mo;       DestDir: {app}\loca
 Source: {#BUILD_ROOT}\po\ru\LC_MESSAGES\aegisub.mo;          DestDir: {app}\locale\ru;    DestName: aegisub.mo; Flags: ignoreversion; Components: translations
 Source: {#BUILD_ROOT}\po\sr_RS\LC_MESSAGES\aegisub.mo;       DestDir: {app}\locale\sr_RS; DestName: aegisub.mo; Flags: ignoreversion; Components: translations
 Source: {#BUILD_ROOT}\po\sr_RS@latin\LC_MESSAGES\aegisub.mo; DestDir: {app}\locale\sr_RS@latin; DestName: aegisub.mo; Flags: ignoreversion; Components: translations
+Source: {#BUILD_ROOT}\po\tr\LC_MESSAGES\aegisub.mo;          DestDir: {app}\locale\tr;    DestName: aegisub.mo; Flags: ignoreversion; Components: translations
 Source: {#BUILD_ROOT}\po\uk_UA\LC_MESSAGES\aegisub.mo;       DestDir: {app}\locale\uk_UA; DestName: aegisub.mo; Flags: ignoreversion; Components: translations
 Source: {#BUILD_ROOT}\po\vi\LC_MESSAGES\aegisub.mo;          DestDir: {app}\locale\vi;    DestName: aegisub.mo; Flags: ignoreversion; Components: translations
 Source: {#BUILD_ROOT}\po\zh_CN\LC_MESSAGES\aegisub.mo;       DestDir: {app}\locale\zh_CN; DestName: aegisub.mo; Flags: ignoreversion; Components: translations

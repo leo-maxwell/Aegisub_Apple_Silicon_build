@@ -35,6 +35,7 @@
 #include <libaegisub/signal.h>
 
 #include "vector2d.h"
+#include "visual_tool_vector_clip.h"
 
 #include <memory>
 #include <typeinfo>
@@ -42,7 +43,6 @@
 #include <wx/glcanvas.h>
 
 // Prototypes
-class RetinaHelper;
 class VideoController;
 class VideoOutGL;
 class VisualToolBase;
@@ -107,9 +107,7 @@ class VideoDisplay final : public wxGLCanvas {
 	/// Frame which will replace the currently visible frame on the next render
 	std::shared_ptr<VideoFrame> pending_frame;
 
-	std::unique_ptr<RetinaHelper> retina_helper;
 	int scale_factor;
-	agi::signal::Connection scale_factor_connection;
 
 	/// @brief Draw an overscan mask
 	/// @param horizontal_percent The percent of the video reserved horizontally
@@ -165,7 +163,11 @@ public:
 
 	void SetTool(std::unique_ptr<VisualToolBase> new_tool);
 
+	void SetSubTool(int subtool) const { tool->SetSubTool(subtool); };
+
 	bool ToolIsType(std::type_info const& type) const;
+
+	int GetSubTool() const { return tool->GetSubTool(); };
 
 	/// Discard all OpenGL state
 	void Unload();

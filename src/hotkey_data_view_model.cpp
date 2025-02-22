@@ -84,11 +84,9 @@ public:
 		if (col == 0)
 			variant = to_wx(combo.Str());
 		else if (col == 1) {
-			wxIcon icon;
+			wxBitmapBundle icon;
 			try {
-				auto icon_bmp = cmd::get(combo.CmdName())->Icon(16);
-				if (icon_bmp.IsOk())
-					icon.CopyFromBitmap(icon_bmp);
+				icon = cmd::get(combo.CmdName())->Icon();
 			}
 			catch (agi::Exception const&) {
 				// Just use no icon; error is reported in the description column
@@ -290,7 +288,7 @@ bool HotkeyDataViewModel::IsContainer(wxDataViewItem const& item) const {
 bool HotkeyDataViewModel::SetValue(wxVariant const& variant, wxDataViewItem const& item, unsigned int col) {
 	if (!has_pending_changes) {
 		has_pending_changes = true;
-		parent->AddPendingChange([=, this] { Apply(); });
+		parent->AddPendingChange([this] { Apply(); });
 	}
 	return get(item)->SetValue(variant, col);
 }
@@ -312,7 +310,7 @@ void HotkeyDataViewModel::Delete(wxDataViewItem const& item) {
 
 	if (!has_pending_changes) {
 		has_pending_changes = true;
-		parent->AddPendingChange([=, this] { Apply(); });
+		parent->AddPendingChange([this] { Apply(); });
 	}
 }
 

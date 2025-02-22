@@ -67,6 +67,7 @@
 #include <wx/sizer.h>
 #include <wx/statline.h>
 #include <wx/sysopt.h>
+#include <wx/toolbar.h>
 
 enum {
 	ID_APP_TIMER_STATUSCLEAR = 12002
@@ -84,7 +85,7 @@ class AegisubFileDropTarget final : public wxFileDropTarget {
 public:
 	AegisubFileDropTarget(agi::Context *context) : context(context) { }
 	bool OnDropFiles(wxCoord, wxCoord, wxArrayString const& filenames) override {
-		std::vector<std::filesystem::path> files;
+		std::vector<agi::fs::path> files;
 		for (wxString const& fn : filenames)
 			files.push_back(from_wx(fn));
 		agi::dispatch::Main().Async([=, this] { context->project->LoadList(files); });

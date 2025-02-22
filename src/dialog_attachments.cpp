@@ -68,7 +68,7 @@ DialogAttachments::DialogAttachments(wxWindow *parent, AssFile *ass)
 : d(parent, -1, _("Attachment List"))
 , ass(ass)
 {
-	d.SetIcon(GETICON(attach_button_16));
+	d.SetIcons(GETICONS(attach_button));
 
 	listView = new wxListView(&d, -1, wxDefaultPosition, wxSize(500, 200));
 	UpdateList();
@@ -126,7 +126,7 @@ void DialogAttachments::AttachFile(wxFileDialog &diag, wxString const& commit_ms
 	diag.GetPaths(paths);
 
 	for (auto const& fn : paths)
-		ass->InsertAttachment(std::filesystem::path(fn.wx_str()));
+		ass->InsertAttachment(agi::fs::path(fn.wx_str()));
 
 	ass->Commit(commit_msg, AssFile::COMMIT_ATTACHMENT);
 
@@ -156,7 +156,7 @@ void DialogAttachments::OnExtract(wxCommandEvent &) {
 	long i = listView->GetFirstSelected();
 	if (i == -1) return;
 
-	std::filesystem::path path;
+	agi::fs::path path;
 	bool fullPath = false;
 
 	// Multiple or single?

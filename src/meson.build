@@ -165,14 +165,12 @@ if host_machine.system() == 'darwin'
     aegisub_src += files(
         'font_file_lister_coretext.mm',
         'osx/osx_utils.mm',
-        'osx/retina_helper.mm',
     )
 elif host_machine.system() == 'windows'
     aegisub_src += files(
         'avisynth_wrap.cpp',
         'crash_writer_minidump.cpp',
         'font_file_lister_gdi.cpp',
-        # 'libass_gdi_fontselect.cpp',
         'video_provider_avs.cpp',
     )
 
@@ -181,10 +179,10 @@ elif host_machine.system() == 'windows'
     else
         error('Missing Windows SDK GDI Library (wingdi.h / gdi32.lib)')
     endif
-        if cc.has_header('usp10.h')
-        deps += cc.find_library('usp10', required: true)
+    if cc.has_header('dwrite.h')
+        deps += cc.find_library('dwrite', required: true)
     else
-        error('Missing Windows SDK Uniscribe Library (usp10.h / usp10.lib)')
+        error('Missing Windows SDK DirectWrite Library (dwrite.h / dwrite.lib)')
     endif
 
     res_inc = include_directories('bitmaps/windows')

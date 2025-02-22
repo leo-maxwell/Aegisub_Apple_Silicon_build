@@ -14,9 +14,9 @@
 //
 // Aegisub Project http://www.aegisub.org/
 
+#include <libaegisub/fs.h>
 #include <libaegisub/scoped_ptr.h>
 
-#include <filesystem>
 #include <functional>
 #include <map>
 #include <string>
@@ -34,23 +34,23 @@ struct CollectionResult {
 	/// Characters which could not be found in any font files
 	wxString missing;
 	/// Paths to the file(s) containing the requested font
-	std::vector<std::filesystem::path> paths;
+	std::vector<agi::fs::path> paths;
 	bool fake_bold = false;
 	bool fake_italic = false;
 };
 
 #ifdef _WIN32
+#include <dwrite.h>
 class GdiFontFileLister {
-	std::unordered_multimap<uint32_t, std::filesystem::path> index;
-	agi::scoped_holder<HDC> dc;
-	std::string buffer;
-
-	bool ProcessLogFont(LOGFONTW const& expected, LOGFONTW const& actual, std::vector<int> const& characters);
+	agi::scoped_holder<HDC> dc_sh;
+	agi::scoped_holder<IDWriteFactory*> dwrite_factory_sh;
+	agi::scoped_holder<IDWriteFontCollection*> font_collection_sh;
+	agi::scoped_holder<IDWriteGdiInterop*> gdi_interop_sh;
 
 public:
 	/// Constructor
-	/// @param cb Callback for status logging
-	GdiFontFileLister(FontCollectorStatusCallback &cb);
+	/// @throws agi::EnvironmentError if an error occurs during construction.
+	GdiFontFileLister(FontCollectorStatusCallback &);
 
 	/// @brief Get the path to the font with the given styles
 	/// @param facename Name of font face
@@ -141,7 +141,7 @@ class FontCollector {
 	/// Style name -> ASS style definition
 	std::map<std::string, StyleInfo> styles;
 	/// Paths to found required font files
-	std::vector<std::filesystem::path> results;
+	std::vector<agi::fs::path> results;
 	/// Number of fonts which could not be found
 	int missing = 0;
 	/// Number of fonts which were found, but did not contain all used glyphs
@@ -166,5 +166,5 @@ public:
 	/// @param file Lines in the subtitle file to check
 	/// @param status Callback function for messages
 	/// @return List of paths to fonts
-	std::vector<std::filesystem::path> GetFontPaths(const AssFile *file);
+	std::vector<agi::fs::path> GetFontPaths(const AssFile *file);
 };

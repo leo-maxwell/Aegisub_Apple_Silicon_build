@@ -110,7 +110,7 @@ DialogAutomation::DialogAutomation(agi::Context *c)
 , global_manager(config::global_scripts)
 , global_scripts_changed(global_manager->AddScriptChangeListener(&DialogAutomation::RebuildList, this))
 {
-	SetIcon(GETICON(automation_toolbutton_16));
+	SetIcons(GETICONS(automation_toolbutton));
 
 	// create main controls
 	list = new wxListView(this, -1, wxDefaultPosition, wxSize(600, 175), wxLC_REPORT|wxLC_SINGLE_SEL);
@@ -210,7 +210,7 @@ void DialogAutomation::UpdateDisplay()
 }
 
 template<class Container>
-static bool has_file(Container const& c, std::filesystem::path const& fn)
+static bool has_file(Container const& c, agi::fs::path const& fn)
 {
 	return any_of(c.begin(), c.end(),
 		[&](std::unique_ptr<Automation4::Script> const& s) { return fn == s->GetFilename(); });
@@ -231,7 +231,7 @@ void DialogAutomation::OnAdd(wxCommandEvent &)
 	diag.GetPaths(fnames);
 
 	for (auto const& fname : fnames) {
-		std::filesystem::path fnpath(fname.wx_str());
+		agi::fs::path fnpath(fname.wx_str());
 		OPT_SET("Path/Last/Automation")->SetString(fnpath.parent_path().string());
 
 		if (has_file(local_manager->GetScripts(), fnpath) || has_file(global_manager->GetScripts(), fnpath)) {
@@ -294,7 +294,7 @@ void DialogAutomation::OnInfo(wxCommandEvent &)
 			ei->script->GetFilename().wstring(),
 			ei->script->GetLoadedState() ? _("Correctly loaded") : _("Failed to load")));
 
-		boost::transform(ei->script->GetMacros(), append_info, [=, this](const cmd::Command *f) {
+		boost::transform(ei->script->GetMacros(), append_info, [this](const cmd::Command *f) {
 			return fmt_tl("    Macro: %s (%s)", f->StrDisplay(context), f->name());
 		});
 		boost::transform(ei->script->GetFilters(), append_info, [](const Automation4::ExportFilter* f) {

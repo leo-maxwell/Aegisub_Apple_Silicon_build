@@ -83,10 +83,10 @@ class FFmpegSourceVideoProvider final : public VideoProvider, FFmpegSourceProvid
 	FFMS_ErrorInfo ErrInfo;         ///< FFMS error codes/messages
 	bool has_audio = false;
 
-	void LoadVideo(std::filesystem::path const& filename, std::string_view colormatrix);
+	void LoadVideo(agi::fs::path const& filename, std::string_view colormatrix);
 
 public:
-	FFmpegSourceVideoProvider(std::filesystem::path const& filename, std::string_view colormatrix, agi::BackgroundRunner *br);
+	FFmpegSourceVideoProvider(agi::fs::path const& filename, std::string_view colormatrix, agi::BackgroundRunner *br);
 
 	void GetFrame(int n, VideoFrame &out) override;
 
@@ -103,15 +103,9 @@ public:
 
 	int GetFrameCount() const override             { return VideoInfo->NumFrames; }
 
-#if FFMS_VERSION >= ((2 << 24) | (24 << 16) | (0 << 8) | 0)
 	int GetWidth() const override  { return (VideoInfo->Rotation % 180 == 90 || VideoInfo->Rotation % 180 == -90) ? Height : Width; }
 	int GetHeight() const override { return (VideoInfo->Rotation % 180 == 90 || VideoInfo->Rotation % 180 == -90) ? Width : Height; }
 	double GetDAR() const override { return (VideoInfo->Rotation % 180 == 90 || VideoInfo->Rotation % 180 == -90) ? 1 / DAR : DAR; }
-#else
-	int GetWidth() const override                  { return Width; }
-	int GetHeight() const override                 { return Height; }
-	double GetDAR() const override                 { return DAR; }
-#endif
 
 	agi::vfr::Framerate GetFPS() const override    { return Timecodes; }
 	std::string GetColorSpace() const override     { return ColorSpace; }
@@ -143,7 +137,7 @@ std::string colormatrix_description(int cs, int cr) {
 	}
 }
 
-FFmpegSourceVideoProvider::FFmpegSourceVideoProvider(std::filesystem::path const& filename, std::string_view colormatrix, agi::BackgroundRunner *br) try
+FFmpegSourceVideoProvider::FFmpegSourceVideoProvider(agi::fs::path const& filename, std::string_view colormatrix, agi::BackgroundRunner *br) try
 : FFmpegSourceProvider(br)
 , VideoSource(nullptr, FFMS_DestroyVideoSource)
 {
@@ -160,7 +154,7 @@ catch (agi::EnvironmentError const& err) {
 	throw VideoOpenError(err.GetMessage());
 }
 
-void FFmpegSourceVideoProvider::LoadVideo(std::filesystem::path const& filename, std::string_view colormatrix) {
+void FFmpegSourceVideoProvider::LoadVideo(agi::fs::path const& filename, std::string_view colormatrix) {
 	FFMS_Indexer *Indexer = FFMS_CreateIndexer(filename.string().c_str(), &ErrInfo);
 	if (!Indexer) {
 		if (ErrInfo.SubType == FFMS_ERROR_FILE_READ)
@@ -230,10 +224,6 @@ void FFmpegSourceVideoProvider::LoadVideo(std::filesystem::path const& filename,
 
 	// set thread count
 	int Threads = OPT_GET("Provider/Video/FFmpegSource/Decoding Threads")->GetInt();
-#if FFMS_VERSION < ((2 << 24) | (30 << 16) | (0 << 8) | 0)
-	if (FFMS_GetVersion() < ((2 << 24) | (17 << 16) | (2 << 8) | 1) && FFMS_GetSourceType(Index) == FFMS_SOURCE_LAVF)
-		Threads = 1;
-#endif
 
 	// set seekmode
 	// TODO: give this its own option?
@@ -323,7 +313,7 @@ void FFmpegSourceVideoProvider::GetFrame(int n, VideoFrame &out) {
 	out.width = Width;
 	out.height = Height;
 	out.pitch = frame->Linesize[0];
-#if FFMS_VERSION >= ((2 << 24) | (31 << 16) | (0 << 8) | 0)
+
 	// Handle flip
 	if (VideoInfo->Flip > 0)
 		for (int x = 0; x < Height; ++x)
@@ -336,8 +326,7 @@ void FFmpegSourceVideoProvider::GetFrame(int n, VideoFrame &out) {
 			for (int y = 0; y < Width; ++y)
 				for (int ch = 0; ch < 4; ++ch)
 					std::swap(out.data[frame->Linesize[0] * x + 4 * y + ch], out.data[frame->Linesize[0] * (Height - 1 - x) + 4 * y + ch]);
-#endif
-#if FFMS_VERSION >= ((2 << 24) | (24 << 16) | (0 << 8) | 0)
+
 	// Handle rotation
 	if (VideoInfo->Rotation % 360 == 180 || VideoInfo->Rotation % 360 == -180) {
 		std::vector<unsigned char> data(std::move(out.data));
@@ -370,11 +359,10 @@ void FFmpegSourceVideoProvider::GetFrame(int n, VideoFrame &out) {
 		out.height = Width;
 		out.pitch = 4 * Height;
 	}
-#endif
 }
 }
 
-std::unique_ptr<VideoProvider> CreateFFmpegSourceVideoProvider(std::filesystem::path const& path, std::string_view colormatrix, agi::BackgroundRunner *br) {
+std::unique_ptr<VideoProvider> CreateFFmpegSourceVideoProvider(agi::fs::path const& path, std::string_view colormatrix, agi::BackgroundRunner *br) {
 	return std::make_unique<FFmpegSourceVideoProvider>(path, colormatrix, br);
 }
 

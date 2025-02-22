@@ -40,6 +40,7 @@
 #include <libaegisub/format.h>
 #include <libaegisub/split.h>
 
+#include <algorithm>
 #include <boost/lexical_cast.hpp>
 #include <wx/intl.h>
 
@@ -192,6 +193,7 @@ void AssStyle::UpdateData() {
 
 void AssStyle::GetEncodings(wxArrayString &encodingStrings) {
 	encodingStrings.Clear();
+	encodingStrings.Add(wxString("-1 - ") + _("Auto-detect base direction (libass only)"));
 	encodingStrings.Add(wxString("0 - ") + _("ANSI"));
 	encodingStrings.Add(wxString("1 - ") + _("Default"));
 	encodingStrings.Add(wxString("2 - ") + _("Symbol"));

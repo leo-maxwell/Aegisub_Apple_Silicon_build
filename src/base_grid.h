@@ -32,6 +32,8 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <wx/brush.h>
+#include <wx/scrolbar.h>
 #include <wx/window.h>
 
 namespace agi {
@@ -92,6 +94,7 @@ class BaseGrid final : public wxWindow {
 	/// Cached grid body context menu
 	std::unique_ptr<wxMenu> context_menu;
 
+	void OnDPIChanged(wxDPIChangedEvent &e);
 	void OnContextMenu(wxContextMenuEvent &evt);
 	void OnHighlightVisibleChange(agi::OptionValue const& opt);
 	void OnKeyDown(wxKeyEvent &event);

@@ -17,9 +17,9 @@
 #include "include/aegisub/video_provider.h"
 
 #include <libaegisub/exception.h>
+#include <libaegisub/fs.h>
 
 #include <atomic>
-#include <filesystem>
 #include <memory>
 #include <set>
 #include <wx/event.h>
@@ -78,6 +78,9 @@ class AsyncVideoProvider {
 
 	std::vector<std::shared_ptr<VideoFrame>> buffers;
 
+	// Returns a monochromatic frame with the current dimensions
+	VideoFrame GetBlankFrame(bool white);
+
 public:
 	/// @brief Load the passed subtitle file
 	/// @param subs File to load
@@ -108,6 +111,15 @@ public:
 	/// @brief raw   Get raw frame without subtitles
 	std::shared_ptr<VideoFrame> GetFrame(int frame, double time, bool raw = false);
 
+	/// @brief Synchronously get the subtitles with transparent background
+	/// @brief time  Exact start time of the frame in seconds
+	///
+	/// This function is not used for drawing the subtitles on the screen and is not
+	/// guaranteed that drawing the resulting image on the current raw frame exactly
+	/// results in the current rendered frame with subtitles. This function is for
+	/// purposes like copying the current subtitles to the clipboard.
+	VideoFrame GetSubtitles(double time);
+
 	/// Ask the video provider to change YCbCr matricies
 	void SetColorSpace(std::string_view matrix);
 
@@ -127,7 +139,7 @@ public:
 	/// @brief Constructor
 	/// @param videoFileName File to open
 	/// @param parent Event handler to send FrameReady events to
-	AsyncVideoProvider(std::filesystem::path const& filename, std::string_view colormatrix, wxEvtHandler *parent, agi::BackgroundRunner *br);
+	AsyncVideoProvider(agi::fs::path const& filename, std::string_view colormatrix, wxEvtHandler *parent, agi::BackgroundRunner *br);
 	~AsyncVideoProvider();
 };
 

@@ -32,7 +32,6 @@
 #include "compat.h"
 #include "format.h"
 #include "options.h"
-#include "retina_helper.h"
 
 #include <libaegisub/dispatch.h>
 #include <libaegisub/fs.h>
@@ -41,6 +40,7 @@
 #ifdef __UNIX__
 #include <unistd.h>
 #endif
+#include <algorithm>
 #include <map>
 #include <unicode/locid.h>
 #include <unicode/unistr.h>
@@ -75,8 +75,9 @@ wxString PrettySize(int bytes) {
 	return agi::wxformat(fmt, size) + " " + suffix[i];
 }
 
-std::string float_to_string(double val) {
-	std::string s = agi::format("%.3f", val);
+std::string float_to_string(double val, int precision) {
+	std::string fmt = "%." + std::to_string(precision) + "f";
+	std::string s = agi::format(fmt, val);
 	size_t pos = s.find_last_not_of("0");
 	if (pos != s.find(".")) ++pos;
 	s.erase(begin(s) + pos, end(s));
@@ -154,7 +155,7 @@ void SetClipboard(wxBitmap const& new_data) {
 	}
 }
 
-void CleanCache(std::filesystem::path const& directory, std::string const& file_type, uint64_t max_size, uint64_t max_files) {
+void CleanCache(agi::fs::path const& directory, std::string const& file_type, uint64_t max_size, uint64_t max_files) {
 	static std::unique_ptr<agi::dispatch::Queue> queue;
 	if (!queue)
 		queue = agi::dispatch::Create();
@@ -165,10 +166,10 @@ void CleanCache(std::filesystem::path const& directory, std::string const& file_
 	queue->Async([=]{
 		LOG_D("utils/clean_cache") << "cleaning " << directory/file_type;
 		uint64_t total_size = 0;
-		using cache_item = std::pair<std::filesystem::file_time_type, std::filesystem::path>;
+		using cache_item = std::pair<std::filesystem::file_time_type, agi::fs::path>;
 		std::vector<cache_item> cachefiles;
 		for (auto const& file : agi::fs::DirectoryIterator(directory, file_type)) {
-			std::filesystem::path path = directory/file;
+			agi::fs::path path = directory/file;
 			cachefiles.push_back({agi::fs::ModifiedTime(path), path});
 			total_size += agi::fs::Size(path);
 		}
@@ -211,11 +212,6 @@ void CleanCache(std::filesystem::path const& directory, std::string const& file_
 // OS X implementation in osx_utils.mm
 void AddFullScreenButton(wxWindow *) { }
 void SetFloatOnParent(wxWindow *) { }
-
-// OS X implementation in retina_helper.mm
-RetinaHelper::RetinaHelper(wxWindow *) { }
-RetinaHelper::~RetinaHelper() { }
-int RetinaHelper::GetScaleFactor() const { return 1; }
 #endif
 
 wxString FontFace(std::string opt_prefix) {
@@ -243,21 +239,21 @@ wxString FontFace(std::string opt_prefix) {
 	return to_wx(value);
 }
 
-static std::filesystem::path FileSelector(wxString const& message, std::string const& option_name, std::string const& default_filename, std::string const& default_extension, std::string const& wildcard, int flags, wxWindow *parent) {
+static agi::fs::path FileSelector(wxString const& message, std::string const& option_name, std::string const& default_filename, std::string const& default_extension, std::string const& wildcard, int flags, wxWindow *parent) {
 	wxString path;
 	if (!option_name.empty())
 		path = to_wx(OPT_GET(option_name)->GetString());
-	std::filesystem::path filename = wxFileSelector(message, path, to_wx(default_filename), to_wx(default_extension), to_wx(wildcard), flags, parent).wx_str();
+	agi::fs::path filename = from_wx(wxFileSelector(message, path, to_wx(default_filename), to_wx(default_extension), to_wx(wildcard), flags, parent));
 	if (!filename.empty() && !option_name.empty())
 		OPT_SET(option_name)->SetString(filename.parent_path().string());
 	return filename;
 }
 
-std::filesystem::path OpenFileSelector(wxString const& message, std::string const& option_name, std::string const& default_filename, std::string const& default_extension, std::string const& wildcard, wxWindow *parent) {
+agi::fs::path OpenFileSelector(wxString const& message, std::string const& option_name, std::string const& default_filename, std::string const& default_extension, std::string const& wildcard, wxWindow *parent) {
 	return FileSelector(message, option_name, default_filename, default_extension, wildcard, wxFD_OPEN | wxFD_FILE_MUST_EXIST, parent);
 }
 
-std::filesystem::path SaveFileSelector(wxString const& message, std::string const& option_name, std::string const& default_filename, std::string const& default_extension, std::string const& wildcard, wxWindow *parent) {
+agi::fs::path SaveFileSelector(wxString const& message, std::string const& option_name, std::string const& default_filename, std::string const& default_extension, std::string const& wildcard, wxWindow *parent) {
 	return FileSelector(message, option_name, default_filename, default_extension, wildcard, wxFD_SAVE | wxFD_OVERWRITE_PROMPT, parent);
 }
 

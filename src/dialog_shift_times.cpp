@@ -51,7 +51,7 @@ namespace {
 class DialogShiftTimes final : public wxDialog {
 	agi::Context *context;
 
-	std::filesystem::path history_filename;
+	agi::fs::path history_filename;
 	json::Array history;
 	agi::vfr::Framerate fps;
 	agi::signal::Connection timecodes_loaded_slot;
@@ -137,7 +137,7 @@ DialogShiftTimes::DialogShiftTimes(agi::Context *context)
 , timecodes_loaded_slot(context->project->AddTimecodesListener(&DialogShiftTimes::OnTimecodesLoaded, this))
 , selected_set_changed_slot(context->selectionController->AddSelectionListener(&DialogShiftTimes::OnSelectedSetChanged, this))
 {
-	SetIcon(GETICON(shift_times_toolbutton_16));
+	SetIcons(GETICONS(shift_times_toolbutton));
 
 	// Create controls
 	shift_by_time = new wxRadioButton(this, -1, _("&Time: "), wxDefaultPosition, wxDefaultSize, wxRB_GROUP);
@@ -189,11 +189,12 @@ DialogShiftTimes::DialogShiftTimes(agi::Context *context)
 		shift_frames->Disable();
 
 	// Position controls
-	wxSizer *shift_amount_sizer = new wxFlexGridSizer(2, 2, 5, 5);
+	wxFlexGridSizer* shift_amount_sizer = new wxFlexGridSizer(2, 2, 5, 5);
+	shift_amount_sizer->AddGrowableCol(1, 1);
 	shift_amount_sizer->Add(shift_by_time, wxSizerFlags(0).Align(wxALIGN_CENTER_VERTICAL));
-	shift_amount_sizer->Add(shift_time, wxSizerFlags(1));
+	shift_amount_sizer->Add(shift_time, wxSizerFlags().Expand());
 	shift_amount_sizer->Add(shift_by_frames, wxSizerFlags(0).Align(wxALIGN_CENTER_VERTICAL));
-	shift_amount_sizer->Add(shift_frames, wxSizerFlags(1));
+	shift_amount_sizer->Add(shift_frames, wxSizerFlags().Expand());
 
 	wxSizer *shift_direction_sizer = new wxBoxSizer(wxHORIZONTAL);
 	shift_direction_sizer->Add(shift_forward, wxSizerFlags(1).Expand());

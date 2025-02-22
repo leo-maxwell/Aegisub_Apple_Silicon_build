@@ -90,21 +90,21 @@ SubsTextEditCtrl::SubsTextEditCtrl(wxWindow* parent, wxSize wsize, long style, a
 	// Set properties
 	SetWrapMode(wxSTC_WRAP_WORD);
 	SetMarginWidth(1,0);
-	UsePopUp(false);
+	UsePopUp(wxSTC_POPUP_NEVER);
 	SetStyles();
 
 	// Set hotkeys
-	CmdKeyClear(wxSTC_KEY_RETURN,wxSTC_SCMOD_CTRL);
-	CmdKeyClear(wxSTC_KEY_RETURN,wxSTC_SCMOD_SHIFT);
-	CmdKeyClear(wxSTC_KEY_RETURN,wxSTC_SCMOD_NORM);
-	CmdKeyClear(wxSTC_KEY_TAB,wxSTC_SCMOD_NORM);
-	CmdKeyClear(wxSTC_KEY_TAB,wxSTC_SCMOD_SHIFT);
-	CmdKeyClear('D',wxSTC_SCMOD_CTRL);
-	CmdKeyClear('L',wxSTC_SCMOD_CTRL);
-	CmdKeyClear('L',wxSTC_SCMOD_CTRL | wxSTC_SCMOD_SHIFT);
-	CmdKeyClear('T',wxSTC_SCMOD_CTRL);
-	CmdKeyClear('T',wxSTC_SCMOD_CTRL | wxSTC_SCMOD_SHIFT);
-	CmdKeyClear('U',wxSTC_SCMOD_CTRL);
+	CmdKeyClear(wxSTC_KEY_RETURN,wxSTC_KEYMOD_CTRL);
+	CmdKeyClear(wxSTC_KEY_RETURN,wxSTC_KEYMOD_SHIFT);
+	CmdKeyClear(wxSTC_KEY_RETURN,wxSTC_KEYMOD_NORM);
+	CmdKeyClear(wxSTC_KEY_TAB,wxSTC_KEYMOD_NORM);
+	CmdKeyClear(wxSTC_KEY_TAB,wxSTC_KEYMOD_SHIFT);
+	CmdKeyClear('D',wxSTC_KEYMOD_CTRL);
+	CmdKeyClear('L',wxSTC_KEYMOD_CTRL);
+	CmdKeyClear('L',wxSTC_KEYMOD_CTRL | wxSTC_KEYMOD_SHIFT);
+	CmdKeyClear('T',wxSTC_KEYMOD_CTRL);
+	CmdKeyClear('T',wxSTC_KEYMOD_CTRL | wxSTC_KEYMOD_SHIFT);
+	CmdKeyClear('U',wxSTC_KEYMOD_CTRL);
 
 	using std::bind;
 
@@ -124,11 +124,11 @@ SubsTextEditCtrl::SubsTextEditCtrl(wxWindow* parent, wxSize wsize, long style, a
 	Bind(wxEVT_CONTEXT_MENU, &SubsTextEditCtrl::OnContextMenu, this);
 	Bind(wxEVT_IDLE, std::bind(&SubsTextEditCtrl::UpdateCallTip, this));
 	Bind(wxEVT_STC_DOUBLECLICK, &SubsTextEditCtrl::OnDoubleClick, this);
-	Bind(wxEVT_STC_STYLENEEDED, [=, this](wxStyledTextEvent&) {
+	Bind(wxEVT_STC_STYLENEEDED, [this](wxStyledTextEvent&) {
 		{
 			std::string text = GetTextRaw().data();
 			if (text == line_text) return;
-			line_text = move(text);
+			line_text = std::move(text);
 		}
 
 		UpdateStyle();
@@ -138,7 +138,10 @@ SubsTextEditCtrl::SubsTextEditCtrl(wxWindow* parent, wxSize wsize, long style, a
 	OPT_SUB("Subtitle/Edit Box/Font Size", &SubsTextEditCtrl::SetStyles, this);
 	Subscribe("Normal");
 	Subscribe("Comment");
-	Subscribe("Drawing");
+	Subscribe("Drawing Command");
+	Subscribe("Drawing X");
+	Subscribe("Drawing Y");
+	OPT_SUB("Colour/Subtitle/Syntax/Underline/Drawing Endpoint", &SubsTextEditCtrl::SetStyles, this);
 	Subscribe("Brackets");
 	Subscribe("Slashes");
 	Subscribe("Tags");
@@ -152,13 +155,13 @@ SubsTextEditCtrl::SubsTextEditCtrl(wxWindow* parent, wxSize wsize, long style, a
 	OPT_SUB("Subtitle/Highlight/Syntax", &SubsTextEditCtrl::UpdateStyle, this);
 	OPT_SUB("App/Call Tips", &SubsTextEditCtrl::UpdateCallTip, this);
 
-	Bind(wxEVT_MENU, [=, this](wxCommandEvent&) {
+	Bind(wxEVT_MENU, [this](wxCommandEvent&) {
 		if (spellchecker) spellchecker->AddWord(currentWord);
 		UpdateStyle();
 		SetFocus();
 	}, EDIT_MENU_ADD_TO_DICT);
 
-	Bind(wxEVT_MENU, [=, this](wxCommandEvent&) {
+	Bind(wxEVT_MENU, [this](wxCommandEvent&) {
 		if (spellchecker) spellchecker->RemoveWord(currentWord);
 		UpdateStyle();
 		SetFocus();
@@ -198,7 +201,7 @@ void SubsTextEditCtrl::OnKeyDown(wxKeyEvent &event) {
 		auto sel_start = GetSelectionStart(), sel_end = GetSelectionEnd();
 		wxCharBuffer old = GetTextRaw();
 		std::string data(old.data(), sel_start);
-		data.append("\\N");
+		data.append(OPT_GET("Subtitle/Edit Box/Soft Line Break")->GetBool() ? "\\n" : "\\N");
 		data.append(old.data() + sel_end, old.length() - sel_end);
 		SetTextRaw(data.c_str());
 
@@ -230,7 +233,13 @@ void SubsTextEditCtrl::SetStyles() {
 	namespace ss = agi::ass::SyntaxStyle;
 	SetSyntaxStyle(ss::NORMAL, font, "Normal", default_background);
 	SetSyntaxStyle(ss::COMMENT, font, "Comment", default_background);
-	SetSyntaxStyle(ss::DRAWING, font, "Drawing", default_background);
+	SetSyntaxStyle(ss::DRAWING_CMD, font, "Drawing Command", default_background);
+	SetSyntaxStyle(ss::DRAWING_X, font, "Drawing X", default_background);
+	SetSyntaxStyle(ss::DRAWING_Y, font, "Drawing Y", default_background);
+	SetSyntaxStyle(ss::DRAWING_ENDPOINT_X, font, "Drawing X", default_background);
+	SetSyntaxStyle(ss::DRAWING_ENDPOINT_Y, font, "Drawing Y", default_background);
+	StyleSetUnderline(ss::DRAWING_ENDPOINT_X, OPT_GET("Colour/Subtitle/Syntax/Underline/Drawing Endpoint")->GetBool());
+	StyleSetUnderline(ss::DRAWING_ENDPOINT_Y, OPT_GET("Colour/Subtitle/Syntax/Underline/Drawing Endpoint")->GetBool());
 	SetSyntaxStyle(ss::OVERRIDE, font, "Brackets", default_background);
 	SetSyntaxStyle(ss::PUNCTUATION, font, "Slashes", default_background);
 	SetSyntaxStyle(ss::TAG, font, "Tags", default_background);
@@ -258,11 +267,7 @@ void SubsTextEditCtrl::UpdateStyle() {
 	cursor_pos = -1;
 	UpdateCallTip();
 
-#if wxVERSION_NUMBER >= 3100
 	StartStyling(0);
-#else
-	StartStyling(0, 255);
-#endif
 
 	if (!OPT_GET("Subtitle/Highlight/Syntax")->GetBool()) {
 		SetStyling(line_text.size(), 0);

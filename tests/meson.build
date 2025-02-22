@@ -1,6 +1,10 @@
-gtest_proj = subproject('gtest')
-gtest_dep = gtest_proj.get_variable('gtest_dep')
-gmock_dep = gtest_proj.get_variable('gmock_dep')
+gtest_ver = '>=1.14.0'
+gtest_dep = dependency('gtest', 
+                       fallback : ['gtest', 'gtest_dep'], 
+                       version : gtest_ver)
+gmock_dep = dependency('gmock', 
+                       fallback : ['gtest', 'gmock_dep'], 
+                       version : gtest_ver)
 
 tests_deps = [
     gtest_dep,
@@ -56,13 +60,14 @@ endif
 runner = executable(
     'gtest-main',
     tests_src,
-    include_directories: [tests_inc, libaegisub_inc, deps_inc],
+    include_directories: [tests_inc, libaegisub_inc],
     dependencies: [tests_deps, deps],
     cpp_args: tests_args,
     link_with: libaegisub,
 )
 
 test('gtest main', runner)
+test('luajit-52', executable('luajit-52', 'tests/luajit_52.c', dependencies: luajit))
 
 # setup test env
 if host_machine.system() == 'windows'

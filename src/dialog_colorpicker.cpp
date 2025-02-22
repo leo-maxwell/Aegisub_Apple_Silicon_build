@@ -38,6 +38,7 @@
 
 #include <libaegisub/scoped_ptr.h>
 
+#include <algorithm>
 #include <memory>
 #include <vector>
 
@@ -303,7 +304,7 @@ public:
 		SetCursor(*wxCROSS_CURSOR);
 
 		Bind(wxEVT_LEFT_DOWN, &ColorPickerRecent::OnClick, this);
-		Bind(wxEVT_SIZE, [=, this](wxSizeEvent&) { UpdateBitmap(); });
+		Bind(wxEVT_SIZE, [this](wxSizeEvent&) { UpdateBitmap(); });
 	}
 
 	/// Load the colors to show
@@ -383,10 +384,14 @@ public:
 	void DropFromScreenXY(int x, int y);
 };
 
+#ifndef MAC_OS_VERSION_15_0
+#define MAC_OS_VERSION_15_0 150000
+#endif
+
 void ColorPickerScreenDropper::DropFromScreenXY(int x, int y) {
 	wxMemoryDC capdc(capture);
 	capdc.SetPen(*wxTRANSPARENT_PEN);
-#ifndef __WXMAC__
+#if !(defined(__WXMAC__) && (MAC_OS_X_VERSION_MIN_REQUIRED < MAC_OS_VERSION_15_0))
 	wxScreenDC screen;
 	capdc.StretchBlit(0, 0, resx * magnification, resy * magnification,
 		&screen, x - resx / 2, y - resy / 2, resx, resy);
@@ -399,8 +404,8 @@ void ColorPickerScreenDropper::DropFromScreenXY(int x, int y) {
 	CGGetDisplaysWithPoint(CGPointMake(x, y), 1, &display_id, &display_count);
 
 	agi::scoped_holder<CGImageRef> img(CGDisplayCreateImageForRect(display_id, CGRectMake(x - resx / 2, y - resy / 2, resx, resy)), CGImageRelease);
-	NSUInteger width = CGImageGetWidth(img);
-	NSUInteger height = CGImageGetHeight(img);
+	size_t width = CGImageGetWidth(img);
+	size_t height = CGImageGetHeight(img);
 	std::vector<uint8_t> imgdata(height * width * 4);
 
 	agi::scoped_holder<CGColorSpaceRef> colorspace(CGColorSpaceCreateDeviceRGB(), CGColorSpaceRelease);
@@ -450,7 +455,7 @@ class DialogColorPicker final : public wxDialog {
 	wxSpinCtrl *alpha_input;
 
 	/// The eyedropper is set to a blank icon when it's clicked, so store its normal bitmap
-	wxBitmap eyedropper_bitmap;
+	wxBitmapBundle eyedropper_bitmap;
 
 	/// The point where the eyedropper was click, used to make it possible to either
 	/// click the eyedropper or drag the eyedropper
@@ -558,32 +563,31 @@ DialogColorPicker::DialogColorPicker(wxWindow *parent, agi::Color initial_color,
 	wxString modes[] = { _("RGB/R"), _("RGB/G"), _("RGB/B"), _("HSL/L"), _("HSV/H") };
 	colorspace_choice = new wxChoice(this, -1, wxDefaultPosition, wxDefaultSize, 5, modes);
 
-	wxSize colorinput_size = GetTextExtent(" &H10117B& ");
-	colorinput_size.SetHeight(-1);
-	wxSize colorinput_labelsize(40, -1);
-
 	wxSizer *rgb_box = new wxStaticBoxSizer(wxHORIZONTAL, this, _("RGB color"));
 	wxSizer *hsl_box = new wxStaticBoxSizer(wxVERTICAL, this, _("HSL color"));
 	wxSizer *hsv_box = new wxStaticBoxSizer(wxVERTICAL, this, _("HSV color"));
 
 	for (auto& elem : rgb_input)
-		elem = new wxSpinCtrl(this, -1, "", wxDefaultPosition, colorinput_size, wxSP_ARROW_KEYS, 0, 255);
+		elem = new wxSpinCtrl(this, -1, "", wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 255);
+
+	auto dummy = new wxTextCtrl(this, -1);
+	wxSize colorinput_size = dummy->GetSizeFromText("&H000000&");
+	dummy->Destroy();
 
 	ass_input = new wxTextCtrl(this, -1, "", wxDefaultPosition, colorinput_size);
 	html_input = new wxTextCtrl(this, -1, "", wxDefaultPosition, colorinput_size);
-	alpha_input = new wxSpinCtrl(this, -1, "", wxDefaultPosition, colorinput_size, wxSP_ARROW_KEYS, 0, 255);
+	alpha_input = new wxSpinCtrl(this, -1, "", wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 255);
 
 	for (auto& elem : hsl_input)
-		elem = new wxSpinCtrl(this, -1, "", wxDefaultPosition, colorinput_size, wxSP_ARROW_KEYS, 0, 255);
+		elem = new wxSpinCtrl(this, -1, "", wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 255);
 
 	for (auto& elem : hsv_input)
-		elem = new wxSpinCtrl(this, -1, "", wxDefaultPosition, colorinput_size, wxSP_ARROW_KEYS, 0, 255);
+		elem = new wxSpinCtrl(this, -1, "", wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 255);
 
 	preview_box = new wxStaticBitmap(this, -1, wxBitmap(40, 40, 24), wxDefaultPosition, wxSize(40, 40), STATIC_BORDER_FLAG);
 	recent_box = new ColorPickerRecent(this, 8, 4, 16);
 
-	eyedropper_bitmap = GETIMAGE(eyedropper_tool_24);
-	eyedropper_bitmap.SetMask(new wxMask(eyedropper_bitmap, wxColour(255, 0, 255)));
+	eyedropper_bitmap = GETBUNDLE(eyedropper_tool, 24);
 	screen_dropper_icon = new wxStaticBitmap(this, -1, eyedropper_bitmap, wxDefaultPosition, wxDefaultSize, wxRAISED_BORDER);
 	screen_dropper = new ColorPickerScreenDropper(this, 7, 7, 8);
 
@@ -699,7 +703,7 @@ wxSizer *DialogColorPicker::MakeColorInputSizer(wxString (&labels)[N], Control *
 	auto sizer = new wxFlexGridSizer(2, 5, 5);
 	for (int i = 0; i < N; ++i) {
 		sizer->Add(new wxStaticText(this, -1, labels[i]), wxSizerFlags(1).Center().Left());
-		sizer->Add(inputs[i]);
+		sizer->Add(inputs[i], wxSizerFlags().Expand());
 	}
 	sizer->AddGrowableCol(0,1);
 	return sizer;
@@ -870,7 +874,7 @@ void DialogColorPicker::UpdateSpectrumDisplay() {
 	}
 	preview_box->SetBitmap(tempBmp);
 
-	alpha_slider_img = make_slider_img([=, this](unsigned char *slid) {
+	alpha_slider_img = make_slider_img([this](unsigned char *slid) {
 		static_assert(slider_width % alpha_box_size == 0, "Slider width must be a multiple of alpha box width");
 
 		for (int y = 0; y < 256; ++y) {
@@ -912,7 +916,7 @@ static wxBitmap *make_spectrum(wxBitmap *bitmap, Func func) {
 }
 
 wxBitmap *DialogColorPicker::MakeGBSpectrum() {
-	return make_spectrum(&rgb_spectrum[0], [=, this](unsigned char *spec) {
+	return make_spectrum(&rgb_spectrum[0], [this](unsigned char *spec) {
 		for (int g = 0; g < 256; g++) {
 			for (int b = 0; b < 256; b++) {
 				*spec++ = cur_color.r;
@@ -924,7 +928,7 @@ wxBitmap *DialogColorPicker::MakeGBSpectrum() {
 }
 
 wxBitmap *DialogColorPicker::MakeRBSpectrum() {
-	return make_spectrum(&rgb_spectrum[1], [=, this](unsigned char *spec) {
+	return make_spectrum(&rgb_spectrum[1], [this](unsigned char *spec) {
 		for (int r = 0; r < 256; r++) {
 			for (int b = 0; b < 256; b++) {
 				*spec++ = r;
@@ -936,7 +940,7 @@ wxBitmap *DialogColorPicker::MakeRBSpectrum() {
 }
 
 wxBitmap *DialogColorPicker::MakeRGSpectrum() {
-	return make_spectrum(&rgb_spectrum[2], [=, this](unsigned char *spec) {
+	return make_spectrum(&rgb_spectrum[2], [this](unsigned char *spec) {
 		for (int r = 0; r < 256; r++) {
 			for (int g = 0; g < 256; g++) {
 				*spec++ = r;

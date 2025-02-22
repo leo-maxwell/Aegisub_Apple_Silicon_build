@@ -70,3 +70,25 @@ jobs:
           name: Aegisub-3.4.0-darwin-aarch64
           path: build_static/Aegisub-3.4.0.dmg
           if-no-files-found: error
+
+      # Tarball
+      - name: Generate tarball
+        if: matrix.config.os == 'ubuntu-latest' && matrix.config.buildtype == 'release'
+        run: |
+          set -e
+
+          meson dist --include-subprojects -C build
+
+          # Make sure the subprojects we need are included
+          mkdir distcheck
+          tar -xJf build/meson-dist/*.tar.xz -C distcheck/
+          test -e distcheck/*/subprojects/luabins/meson.build
+          test -e distcheck/*/subprojects/LuaJIT*/meson.build
+
+      - name: Upload artifacts - tarball
+        uses: actions/upload-artifact@v4
+        if: matrix.config.os == 'ubuntu-latest' && matrix.config.buildtype == 'release'
+        with:
+          name: Source Tarball
+          path: build/meson-dist/*.tar.xz
+          if-no-files-found: error

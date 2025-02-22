@@ -47,6 +47,7 @@
 
 #include <wx/checkbox.h>
 #include <wx/combobox.h>
+#include <wx/dc.h>
 #include <wx/event.h>
 #include <wx/listctrl.h>
 #include <wx/msgdlg.h>
@@ -207,7 +208,7 @@ void Interface(wxTreebook *book, Preferences *parent) {
 	auto edit_box = p->PageSizer(_("Edit Box"));
 	p->OptionAdd(edit_box, _("Enable call tips"), "App/Call Tips");
 	p->OptionAdd(edit_box, _("Overwrite in time boxes"), "Subtitle/Time Edit/Insert Mode");
-	p->CellSkip(edit_box);
+	p->OptionAdd(edit_box, _("Shift+Enter adds \\n"), "Subtitle/Edit Box/Soft Line Break");
 	p->OptionAdd(edit_box, _("Enable syntax highlighting"), "Subtitle/Highlight/Syntax");
 	p->OptionBrowse(edit_box, _("Dictionaries path"), "Path/Dictionary");
 	p->OptionFont(edit_box, "Subtitle/Edit Box/");
@@ -253,7 +254,11 @@ void Interface_Colours(wxTreebook *book, Preferences *parent) {
 	p->OptionAdd(syntax, _("Background"), "Colour/Subtitle/Background");
 	p->OptionAdd(syntax, _("Normal"), "Colour/Subtitle/Syntax/Normal");
 	p->OptionAdd(syntax, _("Comments"), "Colour/Subtitle/Syntax/Comment");
-	p->OptionAdd(syntax, _("Drawings"), "Colour/Subtitle/Syntax/Drawing");
+	p->OptionAdd(syntax, _("Drawing Commands"), "Colour/Subtitle/Syntax/Drawing Command");
+	p->OptionAdd(syntax, _("Drawing X Coords"), "Colour/Subtitle/Syntax/Drawing X");
+	p->OptionAdd(syntax, _("Drawing Y Coords"), "Colour/Subtitle/Syntax/Drawing Y");
+	p->OptionAdd(syntax, _("Underline Spline Endpoints"), "Colour/Subtitle/Syntax/Underline/Drawing Endpoint");
+	p->CellSkip(syntax);
 	p->OptionAdd(syntax, _("Brackets"), "Colour/Subtitle/Syntax/Brackets");
 	p->OptionAdd(syntax, _("Slashes and Parentheses"), "Colour/Subtitle/Syntax/Slashes");
 	p->OptionAdd(syntax, _("Tags"), "Colour/Subtitle/Syntax/Tags");
@@ -351,7 +356,9 @@ void Advanced(wxTreebook *book, Preferences *parent) {
 	auto general = p->PageSizer(_("General"));
 
 	auto warning = new wxStaticText(p, wxID_ANY ,_("Changing these settings might result in bugs and/or crashes.  Do not touch these unless you know what you're doing."));
-	warning->SetFont(wxFont(12, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD));
+	auto font = parent->GetFont().MakeBold();
+	font.SetPointSize(12);
+	warning->SetFont(font);
 	p->sizer->Fit(p);
 	warning->Wrap(400);
 	general->Add(warning, 0, wxALL, 5);
@@ -479,8 +486,8 @@ public:
 		wxString text = iconText.GetText();
 
 		// adjust the label rect to take the width of the icon into account
-		label_rect.x += icon_width;
-		label_rect.width -= icon_width;
+		label_rect.x += parent->FromDIP(icon_width);
+		label_rect.width -= parent->FromDIP(icon_width);
 
 		wxTextCtrl* ctrl = new wxTextCtrl(parent, -1, text, label_rect.GetPosition(), label_rect.GetSize(), wxTE_PROCESS_ENTER);
 		ctrl->SetInsertionPointEnd();
@@ -498,11 +505,14 @@ public:
 	}
 
 	bool Render(wxRect rect, wxDC *dc, int state) override {
-		wxIcon const& icon = value.GetIcon();
+		wxIcon const& icon = value.GetBitmapBundle().GetIconFor(dc->GetWindow());
 		if (icon.IsOk())
-			dc->DrawIcon(icon, rect.x, rect.y + (rect.height - icon.GetHeight()) / 2);
+			dc->DrawIcon(icon, rect.x, rect.y + (rect.height - icon.GetLogicalHeight()) / 2);
 
-		RenderText(value.GetText(), icon_width, rect, dc, state);
+		// Using FromDIP here creates slightly awkward spacing when there is no bitmap available for the exact
+		// requested size (e.g. on 125% DPI scaling), but we cannot use the actual icon's size because our value
+		// may not have an icon.
+		RenderText(value.GetText(), dc->GetWindow()->FromDIP(icon_width), rect, dc, state);
 
 		return true;
 	}
@@ -510,6 +520,7 @@ public:
 	wxSize GetSize() const override {
 		if (!value.GetText().empty()) {
 			wxSize size = GetTextExtent(value.GetText());
+			// FIXME does this need to be DPI scaled? If so, where do we get the scale from?
 			size.x += icon_width;
 			return size;
 		}
@@ -594,11 +605,11 @@ Interface_Hotkeys::Interface_Hotkeys(wxTreebook *book, Preferences *parent)
 	auto delete_button = new wxButton(this, -1, _("&Delete"));
 
 	new_button->Bind(wxEVT_BUTTON, &Interface_Hotkeys::OnNewButton, this);
-	edit_button->Bind(wxEVT_BUTTON, [=, this](wxCommandEvent&) { edit_item(dvc, dvc->GetSelection()); });
-	delete_button->Bind(wxEVT_BUTTON, [=, this](wxCommandEvent&) { model->Delete(dvc->GetSelection()); });
+	edit_button->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) { edit_item(dvc, dvc->GetSelection()); });
+	delete_button->Bind(wxEVT_BUTTON, [this](wxCommandEvent&) { model->Delete(dvc->GetSelection()); });
 
 	quick_search->Bind(wxEVT_TEXT, &Interface_Hotkeys::OnUpdateFilter, this);
-	quick_search->Bind(wxEVT_SEARCHCTRL_CANCEL_BTN, [=, this](wxCommandEvent&) { quick_search->SetValue(""); });
+	quick_search->Bind(wxEVT_SEARCHCTRL_CANCEL_BTN, [this](wxCommandEvent&) { quick_search->SetValue(""); });
 
 	dvc = new wxDataViewCtrl(this, -1);
 	dvc->AssociateModel(model.get());
@@ -702,7 +713,7 @@ void Preferences::OnResetDefault(wxCommandEvent&) {
 }
 
 Preferences::Preferences(wxWindow *parent): wxDialog(parent, -1, _("Preferences"), wxDefaultPosition, wxSize(-1, -1), wxDEFAULT_DIALOG_STYLE | wxRESIZE_BORDER) {
-	SetIcon(GETICON(options_button_16));
+	SetIcons(GETICONS(options_button));
 
 	book = new wxTreebook(this, -1, wxDefaultPosition, wxDefaultSize);
 	General(book, this);

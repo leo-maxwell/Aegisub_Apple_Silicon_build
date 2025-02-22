@@ -42,10 +42,6 @@ using agi::dispatch::Main;
 namespace {
 	void set_taskbar_progress(int progress) {
 #ifdef _MSC_VER
-		int major, minor;
-		wxGetOsVersion(&major, &minor);
-		if (major < 6 || (major == 6 && minor < 1)) return;
-
 		ITaskbarList3 *taskbar;
 		auto hr = ::CoCreateInstance(CLSID_TaskbarList, NULL, CLSCTX_INPROC_SERVER,
 			__uuidof(ITaskbarList3), (LPVOID *)&taskbar);
@@ -107,7 +103,7 @@ public:
 	}
 
 	void SetIndeterminate() override {
-		Main().Async([=, this]{ dialog->pulse_timer.Start(1000); });
+		Main().Async([this]{ dialog->pulse_timer.Start(1000); });
 	}
 };
 
@@ -140,7 +136,7 @@ DialogProgress::DialogProgress(wxWindow *parent, wxString const& title_text, wxS
 	CenterOnParent();
 
 	Bind(wxEVT_SHOW, &DialogProgress::OnShow, this);
-	Bind(wxEVT_TIMER, [=, this](wxTimerEvent&) { gauge->Pulse(); });
+	Bind(wxEVT_TIMER, [this](wxTimerEvent&) { gauge->Pulse(); });
 }
 
 void DialogProgress::Run(std::function<void(agi::ProgressSink*)> task) {

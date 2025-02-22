@@ -87,13 +87,20 @@ using color_str_pair = std::pair<int, wxString>;
 wxDEFINE_EVENT(EVT_ADD_TEXT, ValueEvent<color_str_pair>);
 wxDEFINE_EVENT(EVT_COLLECTION_DONE, wxThreadEvent);
 
-void FontsCollectorThread(AssFile *subs, std::filesystem::path const& destination, FcMode oper, wxEvtHandler *collector) {
+void FontsCollectorThread(AssFile *subs, agi::fs::path const& destination, FcMode oper, wxEvtHandler *collector) {
 	agi::dispatch::Background().Async([=]{
 		auto AppendText = [&](wxString text, int colour) {
 			collector->AddPendingEvent(ValueEvent<color_str_pair>(EVT_ADD_TEXT, -1, {colour, text.Clone()}));
 		};
 
-		auto paths = FontCollector(AppendText).GetFontPaths(subs);
+		std::vector<agi::fs::path> paths;
+		try {
+			paths = FontCollector(AppendText).GetFontPaths(subs);
+		}
+		catch (agi::EnvironmentError const& err) {
+			AppendText(fmt_tl("* An error occurred when enumerating the used fonts: %s.\n", err.GetMessage()), 2);
+		}
+
 		if (paths.empty()) {
 			collector->AddPendingEvent(wxThreadEvent(EVT_COLLECTION_DONE));
 			return;
@@ -220,7 +227,7 @@ DialogFontsCollector::DialogFontsCollector(agi::Context *c)
 , subs(c->ass.get())
 , path(*c->path)
 {
-	SetIcon(GETICON(font_collector_button_16));
+	SetIcons(GETICONS(font_collector_button));
 
 	wxString modes[] = {
 		 _("Check fonts for availability")
@@ -293,7 +300,7 @@ void DialogFontsCollector::OnStart(wxCommandEvent &) {
 	collection_log->ClearAll();
 	collection_log->SetReadOnly(true);
 
-	std::filesystem::path dest_path;
+	agi::fs::path dest_path;
 	if (mode != FcMode::CheckFontsOnly) {
 		auto dest = mode == FcMode::CopyToScriptFolder ? "?script/" : from_wx(dest_ctrl->GetValue());
 		dest_path = path.Decode(dest);
@@ -399,11 +406,7 @@ void DialogFontsCollector::OnAddText(ValueEvent<color_str_pair> &event) {
 	auto const& utf8 = str.second.utf8_str();
 	collection_log->AppendTextRaw(utf8.data(), utf8.length());
 	if (str.first) {
-#if wxVERSION_NUMBER >= 3100
 		collection_log->StartStyling(pos);
-#else
-		collection_log->StartStyling(pos, 255);
-#endif
 		collection_log->SetStyling(utf8.length(), str.first);
 	}
 	collection_log->GotoPos(pos + utf8.length());
