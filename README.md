@@ -1,3 +1,7 @@
+# NOTICE: This project has done its job during the time when the original repo does not provide an ARM64 macOS build
+# Now as the original repo provides it, this repository has been archived and will not be maintained.
+# Find Apple Silicon build in the original repo under Actions section.
+
 # Aegisub
 
 For binaries and general information [see the homepage](http://aegisub.org).
